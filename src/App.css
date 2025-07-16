@@ -611,6 +611,19 @@ body {
   cursor: not-allowed;
 }
 
+.chat-zoom-out {
+  animation: zoomOut 0.3s ease-out;
+}
+
+@keyframes zoomOut {
+  0% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .no-messages {
   text-align: center;
   padding: 40px 20px;

@@ -288,6 +288,7 @@ function ChatPage({ user }) {
   const [newMessage, setNewMessage] = useState('');
   const [userProfiles, setUserProfiles] = useState({});
   const [onlineUsers, setOnlineUsers] = useState(0);
+  const [isZoomingOut, setIsZoomingOut] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -373,6 +374,10 @@ function ChatPage({ user }) {
         timestamp: new Date().toISOString()
       });
       setNewMessage('');
+      
+      // Trigger zoom out animation
+      setIsZoomingOut(true);
+      setTimeout(() => setIsZoomingOut(false), 300);
     }
   };
 
@@ -394,7 +399,7 @@ function ChatPage({ user }) {
   };
 
   return (
-    <div className="page-card chat-container">
+    <div className={`page-card chat-container ${isZoomingOut ? 'chat-zoom-out' : ''}`}>
       <div className="chat-header">
         <h1 className="page-title">Community Chat</h1>
         <div className="online-count">
