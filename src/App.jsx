@@ -381,6 +381,8 @@ function ChatPage({ user }) {
       set(onlineRef, {
         email: user.email,
         timestamp: new Date().toISOString()
+      }).catch(error => {
+        console.error("Error setting user online:", error);
       });
 
       // Listen to online users count
@@ -392,8 +394,13 @@ function ChatPage({ user }) {
             const userTime = new Date(userData.timestamp).getTime();
             return (now - userTime) < 60000;
           });
-          setOnlineUsers(98 + activeUsers.length);
+          setOnlineUsers(Math.max(1, activeUsers.length));
+        } else {
+          setOnlineUsers(1);
         }
+      }, (error) => {
+        console.error("Error listening to online users:", error);
+        setOnlineUsers(1);
       });
 
       // Update user activity every 30 seconds
@@ -401,6 +408,8 @@ function ChatPage({ user }) {
         set(onlineRef, {
           email: user.email,
           timestamp: new Date().toISOString()
+        }).catch(error => {
+          console.error("Error updating user activity:", error);
         });
       }, 30000);
 
@@ -408,7 +417,9 @@ function ChatPage({ user }) {
       return () => {
         unsubscribeOnline();
         clearInterval(activityInterval);
-        set(onlineRef, null);
+        set(onlineRef, null).catch(error => {
+          console.error("Error removing user from online list:", error);
+        });
       };
     }
   }, [user]);
@@ -419,14 +430,19 @@ function ChatPage({ user }) {
 
   const sendMessage = async () => {
     if (newMessage.trim() && user) {
-      const messageRef = ref(db, `chat/messages/${Date.now()}`);
-      await set(messageRef, {
-        text: newMessage,
-        userId: user.uid,
-        userEmail: user.email,
-        timestamp: new Date().toISOString()
-      });
-      setNewMessage('');
+      try {
+        const messageRef = ref(db, `chat/messages/${Date.now()}`);
+        await set(messageRef, {
+          text: newMessage,
+          userId: user.uid,
+          userEmail: user.email,
+          timestamp: new Date().toISOString()
+        });
+        setNewMessage('');
+      } catch (error) {
+        console.error("Error sending message:", error);
+        alert("Failed to send message. Please try again.");
+      }
     }
   };
 
