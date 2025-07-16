@@ -160,7 +160,7 @@ export default function App() {
         </div>
         <div className="wallet-section">
           <div className="balance-display-header">
-            <span>🔒</span>
+            <img src="/IMG_1858.webp" alt="wallet" style={{width: '20px', height: '20px'}} />
             <span>${userBalance.toFixed(2)}</span>
           </div>
           <button className="wallet-btn" onClick={() => setPage("wallet")}>
