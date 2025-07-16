@@ -18,10 +18,22 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userBalance, setUserBalance] = useState(125.50);
+  const [products, setProducts] = useState([
+    { id: 1, name: "Call of Duty: Modern Warfare", price: 59.99, image: "🎮", category: "Action" },
+    { id: 2, name: "The Legend of Zelda", price: 49.99, image: "⚔️", category: "Adventure" },
+    { id: 3, name: "FIFA 2024", price: 39.99, image: "⚽", category: "Sports" },
+    { id: 4, name: "Minecraft", price: 26.95, image: "🧱", category: "Sandbox" }
+  ]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     onAuthStateChanged(auth, (u) => {
       setUser(u);
+      // Check if user is admin (you can modify this logic)
+      if (u && u.email === "admin@gamestore.com") {
+        setIsAdmin(true);
+      }
     });
   }, []);
 
@@ -73,9 +85,10 @@ export default function App() {
       </header>
 
       <div className="content">
-        {page === "home" && <HomePage />}
-        {page === "wallet" && <WalletPage />}
+        {page === "home" && <HomePage products={products} userBalance={userBalance} setUserBalance={setUserBalance} />}
+        {page === "wallet" && <WalletPage balance={userBalance} setBalance={setUserBalance} />}
         {page === "chat" && <ChatPage />}
+        {page === "admin" && isAdmin && <AdminPage products={products} setProducts={setProducts} />}
         {page === "profile" && <ProfilePage user={user} />}
       </div>
 
@@ -99,6 +112,14 @@ export default function App() {
           >
             💬 Chat
           </button>
+          {isAdmin && (
+            <button 
+              className={`nav-btn ${page === "admin" ? "active" : ""}`}
+              onClick={() => setPage("admin")}
+            >
+              👑 Admin
+            </button>
+          )}
           <button 
             className={`nav-btn ${page === "profile" ? "active" : ""}`}
             onClick={() => setPage("profile")}
@@ -111,42 +132,49 @@ export default function App() {
   );
 }
 
-function HomePage() {
+function HomePage({ products, userBalance, setUserBalance }) {
+  const handlePurchase = (product) => {
+    if (userBalance >= product.price) {
+      setUserBalance(userBalance - product.price);
+      alert(`Successfully purchased ${product.name}!`);
+    } else {
+      alert("Insufficient balance! Please add funds to your wallet.");
+    }
+  };
+
   return (
     <div className="page-card">
-      <h1 className="page-title">Discover Games</h1>
-      <p style={{ fontSize: "1.1rem", color: "#666", marginBottom: "30px" }}>
-        Find your next favorite game from our collection
-      </p>
+      <h1 className="page-title">Game Store</h1>
+      <div className="balance-display">
+        Your Balance: <span className="balance-amount">${userBalance.toFixed(2)}</span>
+      </div>
       
-      <div className="feature-grid">
-        <div className="feature-card">
-          <div className="feature-icon">🎮</div>
-          <h3>Action Games</h3>
-          <p>Fast-paced adventures and thrilling combat experiences</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">🧩</div>
-          <h3>Puzzle Games</h3>
-          <p>Challenge your mind with brain-teasing puzzles</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">🏆</div>
-          <h3>Strategy Games</h3>
-          <p>Plan, build, and conquer in strategic gameplay</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">👥</div>
-          <h3>Multiplayer</h3>
-          <p>Connect and compete with players worldwide</p>
-        </div>
+      <div className="products-grid">
+        {products.map(product => (
+          <div key={product.id} className="product-card">
+            <div className="product-image">{product.image}</div>
+            <h3 className="product-name">{product.name}</h3>
+            <p className="product-category">{product.category}</p>
+            <div className="product-price">${product.price}</div>
+            <button 
+              className={`buy-btn ${userBalance < product.price ? 'disabled' : ''}`}
+              onClick={() => handlePurchase(product)}
+              disabled={userBalance < product.price}
+            >
+              {userBalance >= product.price ? 'Buy Now' : 'Insufficient Funds'}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function WalletPage() {
-  const [balance] = useState(125.50);
+function WalletPage({ balance, setBalance }) {
+  const handleAddFunds = (amount) => {
+    setBalance(balance + amount);
+    alert(`Successfully added $${amount} to your wallet!`);
+  };
   
   return (
     <div className="page-card">
@@ -155,7 +183,11 @@ function WalletPage() {
       <div className="wallet-balance">
         <div className="balance-amount">${balance.toFixed(2)}</div>
         <p>Available Balance</p>
-        <button className="recharge-btn">Add Funds</button>
+        <div className="add-funds-buttons">
+          <button className="recharge-btn" onClick={() => handleAddFunds(10)}>Add $10</button>
+          <button className="recharge-btn" onClick={() => handleAddFunds(25)}>Add $25</button>
+          <button className="recharge-btn" onClick={() => handleAddFunds(50)}>Add $50</button>
+        </div>
       </div>
       
       <div className="feature-grid">
@@ -192,6 +224,100 @@ function ChatPage() {
         <div style={{ fontSize: "3rem", marginBottom: "15px" }}>💬</div>
         <h3>Chat Coming Soon</h3>
         <p>Real-time messaging with the gaming community will be available here</p>
+      </div>
+    </div>
+  );
+}
+
+function AdminPage({ products, setProducts }) {
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    image: '🎮',
+    category: ''
+  });
+
+  const handleAddProduct = () => {
+    if (newProduct.name && newProduct.price && newProduct.category) {
+      const product = {
+        id: Date.now(),
+        name: newProduct.name,
+        price: parseFloat(newProduct.price),
+        image: newProduct.image,
+        category: newProduct.category
+      };
+      setProducts([...products, product]);
+      setNewProduct({ name: '', price: '', image: '🎮', category: '' });
+      alert('Product added successfully!');
+    } else {
+      alert('Please fill in all fields');
+    }
+  };
+
+  const handleDeleteProduct = (id) => {
+    setProducts(products.filter(p => p.id !== id));
+    alert('Product deleted successfully!');
+  };
+
+  return (
+    <div className="page-card">
+      <h1 className="page-title">Admin Panel</h1>
+      
+      <div className="admin-section">
+        <h2>Add New Product</h2>
+        <div className="admin-form">
+          <input
+            type="text"
+            placeholder="Product Name"
+            value={newProduct.name}
+            onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+            className="admin-input"
+          />
+          <input
+            type="number"
+            placeholder="Price"
+            value={newProduct.price}
+            onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+            className="admin-input"
+          />
+          <input
+            type="text"
+            placeholder="Category"
+            value={newProduct.category}
+            onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+            className="admin-input"
+          />
+          <select 
+            value={newProduct.image}
+            onChange={(e) => setNewProduct({...newProduct, image: e.target.value})}
+            className="admin-input"
+          >
+            <option value="🎮">🎮</option>
+            <option value="⚔️">⚔️</option>
+            <option value="⚽">⚽</option>
+            <option value="🧱">🧱</option>
+            <option value="🏎️">🏎️</option>
+            <option value="👾">👾</option>
+          </select>
+          <button className="admin-btn" onClick={handleAddProduct}>Add Product</button>
+        </div>
+      </div>
+
+      <div className="admin-section">
+        <h2>Manage Products</h2>
+        <div className="admin-products">
+          {products.map(product => (
+            <div key={product.id} className="admin-product-card">
+              <span>{product.image} {product.name} - ${product.price}</span>
+              <button 
+                className="delete-btn"
+                onClick={() => handleDeleteProduct(product.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
