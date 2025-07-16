@@ -287,6 +287,7 @@ function ChatPage({ user }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [userProfiles, setUserProfiles] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   useEffect(() => {
     // Listen to chat messages
@@ -309,7 +310,49 @@ function ChatPage({ user }) {
         setUserProfiles(snapshot.val());
       }
     });
-  }, []);
+
+    // Track online users
+    if (user) {
+      const onlineRef = ref(db, `chat/online/${user.uid}`);
+      const onlineUsersRef = ref(db, 'chat/online');
+      
+      // Set user as online
+      set(onlineRef, {
+        email: user.email,
+        timestamp: new Date().toISOString()
+      });
+
+      // Listen to online users count
+      const unsubscribeOnline = onValue(onlineUsersRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const onlineData = snapshot.val();
+          const now = new Date().getTime();
+          const activeUsers = Object.values(onlineData).filter(userData => {
+            const userTime = new Date(userData.timestamp).getTime();
+            return (now - userTime) < 60000; // Consider user online if active within last minute
+          });
+          setOnlineUsers(activeUsers.length);
+        } else {
+          setOnlineUsers(0);
+        }
+      });
+
+      // Update user activity every 30 seconds
+      const activityInterval = setInterval(() => {
+        set(onlineRef, {
+          email: user.email,
+          timestamp: new Date().toISOString()
+        });
+      }, 30000);
+
+      // Cleanup on unmount
+      return () => {
+        unsubscribeOnline();
+        clearInterval(activityInterval);
+        set(onlineRef, null); // Remove user from online list
+      };
+    }
+  }, [user]);
 
   const sendMessage = async () => {
     if (newMessage.trim() && user) {
@@ -343,7 +386,13 @@ function ChatPage({ user }) {
 
   return (
     <div className="page-card chat-container">
-      <h1 className="page-title">Community Chat</h1>
+      <div className="chat-header">
+        <h1 className="page-title">Community Chat</h1>
+        <div className="online-count">
+          <span className="online-indicator">🟢</span>
+          {onlineUsers} online
+        </div>
+      </div>
       
       <div className="chat-messages">
         {messages.length === 0 ? (
