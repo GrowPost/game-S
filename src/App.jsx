@@ -26,7 +26,7 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userBalance, setUserBalance] = useState(125.50);
+  const [userBalance, setUserBalance] = useState(0);
   const [products, setProducts] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -39,7 +39,7 @@ export default function App() {
     if (!userSnap.exists()) {
       await set(userRef, {
         email: user.email,
-        balance: 125.50,
+        balance: 0,
         createdAt: new Date().toISOString()
       });
     }
@@ -100,13 +100,6 @@ export default function App() {
         const productsArray = Object.values(productsData);
         setProducts(productsArray);
       } else {
-        // Initialize with default products if none exist
-        const defaultProducts = [
-          { id: Date.now() + 1, name: "Call of Duty: Modern Warfare", price: 59.99, image: "🎮", category: "Action", code: "COD-MW-2024-X7Y9" },
-          { id: Date.now() + 2, name: "The Legend of Zelda", price: 49.99, image: "⚔️", category: "Adventure", code: "ZELDA-ADV-5K3L" },
-          { id: Date.now() + 3, name: "FIFA 2024", price: 39.99, image: "⚽", category: "Sports", code: "FIFA24-SP-9M2N" },
-          { id: Date.now() + 4, name: "Minecraft", price: 26.95, image: "🧱", category: "Sandbox", code: "MC-SB-8P4Q" }
-        ];
         defaultProducts.forEach(product => addProduct(product));
       }
     });
@@ -276,11 +269,6 @@ function WalletPage({ balance, updateUserBalance }) {
       <div className="wallet-balance">
         <div className="balance-amount">${balance.toFixed(2)}</div>
         <p>Available Balance</p>
-        <div className="add-funds-buttons">
-          <button className="recharge-btn" onClick={() => handleAddFunds(10)}>Add $10</button>
-          <button className="recharge-btn" onClick={() => handleAddFunds(25)}>Add $25</button>
-          <button className="recharge-btn" onClick={() => handleAddFunds(50)}>Add $50</button>
-        </div>
       </div>
 
       <div className="feature-grid">
@@ -311,42 +299,7 @@ function ChatPage({ user }) {
   }
 
   useEffect(() => {
-    // Add some demo messages to match the design
-    const demoMessages = [
-      {
-        id: 1,
-        text: "whats ur discord",
-        userId: "demo1",
-        userEmail: "man2ukas@demo.com",
-        timestamp: new Date().toISOString(),
-        type: "user",
-        avatar: "👤",
-        username: "man2ukas"
-      },
-      {
-        id: 2,
-        type: "system",
-        timestamp: new Date().toISOString(),
-        messages: [
-          "@Viljovehka, @sewtrix, @Valtsoo, @TopRich, @AdoyStupidGuy won 10 💰 each for participating in chat rain!",
-          "@Laesss, @8nikos8, @Zorotheracist, @droplugt2, @berkens69 won 10 💰 each for participating in chat rain!"
-        ]
-      },
-      {
-        id: 3,
-        text: "When will the slots work",
-        userId: "demo3",
-        userEmail: "s4monage@demo.com",
-        timestamp: new Date().toISOString(),
-        type: "user",
-        avatar: "🎮",
-        username: "s4monage",
-        level: 54
-      }
-    ];
-
-    setMessages(demoMessages);
-
+   
     // Listen to chat messages from Firebase
     const messagesRef = ref(db, 'chat/messages');
     onValue(messagesRef, (snapshot) => {
@@ -798,7 +751,7 @@ function ProfilePage({ user }) {
 
       {purchases.length > 0 && (
         <div className="purchases-section">
-          <h2>My Game Library</h2>
+          <h2>My Purchase History</h2>
           <div className="purchases-list">
             {purchases.map((purchase, index) => (
               <div key={index} className="purchase-item">
@@ -817,25 +770,6 @@ function ProfilePage({ user }) {
                 </button>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      <div className="feature-grid">
-        <div className="feature-card">
-          <div className="feature-icon">🛍️</div>
-          <h3>Purchase History</h3>
-          <p>View your game library and past purchases</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">⚙️</div>
-          <h3>Account Settings</h3>
-          <p>Manage your preferences and security</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">🏅</div>
-          <h3>Achievements</h3>
-          <p>Track your gaming milestones and badges</p>
         </div>
       </div>
     </div>
