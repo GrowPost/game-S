@@ -488,6 +488,100 @@ body {
   gap: 8px;
 }
 
+/* Betting Section */
+.betting-section {
+  background: #1E2233;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #2A2F3E;
+}
+
+.betting-title {
+  color: #3B7AFD;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.betting-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.betting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.betting-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #3B7AFD;
+}
+
+.bet-amount-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bet-input {
+  padding: 12px;
+  border: 1px solid #2A2F3E;
+  border-radius: 8px;
+  background: #12151E;
+  color: white;
+  font-size: 16px;
+}
+
+.bet-input:focus {
+  outline: none;
+  border-color: #3B7AFD;
+}
+
+.bet-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #6F7F9F;
+  font-size: 14px;
+}
+
+.bet-multiplier {
+  background: #3B7AFD;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.bet-result {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.bet-result.win {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22C55E;
+  border: 1px solid #22C55E;
+}
+
+.bet-result.lose {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+  border: 1px solid #EF4444;
+}
+
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;

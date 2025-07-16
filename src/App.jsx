@@ -31,6 +31,9 @@ export default function App() {
   const [fastOpening, setFastOpening] = useState(false);
   const [unboxResult, setUnboxResult] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [betAmount, setBetAmount] = useState(0);
+  const [isBetting, setIsBetting] = useState(false);
+  const [betResult, setBetResult] = useState(null);
 
   const itemValues = {
     "🎮": 0.05,
@@ -127,8 +130,15 @@ export default function App() {
     if (userBalance >= box.price) {
       setIsSpinning(true);
       setUnboxResult(null);
+      setBetResult(null);
 
-      const newBalance = userBalance - box.price;
+      let newBalance = userBalance - box.price;
+      
+      // Deduct bet amount if betting
+      if (isBetting && betAmount > 0) {
+        newBalance -= betAmount;
+      }
+      
       await updateUserBalance(newBalance);
 
       const spinDuration = fastOpening ? 1000 : 3000;
@@ -139,7 +149,21 @@ export default function App() {
         const itemValue = itemValues[reward] || 0;
         
         // Add item value to balance
-        const finalBalance = newBalance + itemValue;
+        let finalBalance = newBalance + itemValue;
+        
+        // Handle betting outcome
+        if (isBetting && betAmount > 0) {
+          const avgItemValue = box.rewards.reduce((sum, item) => sum + itemValues[item], 0) / box.rewards.length;
+          const won = itemValue > avgItemValue;
+          
+          if (won) {
+            finalBalance += betAmount * 2; // Double the bet
+            setBetResult({ won: true, amount: betAmount * 2 });
+          } else {
+            setBetResult({ won: false, amount: betAmount });
+          }
+        }
+        
         await updateUserBalance(finalBalance);
         
         setUnboxResult(reward);
@@ -297,6 +321,49 @@ export default function App() {
             >
               Demo Spin
             </button>
+          </div>
+
+          {/* Betting System */}
+          <div className="betting-section">
+            <h3 className="betting-title">Bet on High Value Item</h3>
+            <div className="betting-controls">
+              <label className="betting-toggle">
+                <input
+                  type="checkbox"
+                  checked={isBetting}
+                  onChange={(e) => setIsBetting(e.target.checked)}
+                />
+                <span>Enable Betting</span>
+              </label>
+              
+              {isBetting && (
+                <div className="bet-amount-section">
+                  <input
+                    type="number"
+                    min="0"
+                    max={userBalance}
+                    step="0.01"
+                    value={betAmount}
+                    onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
+                    className="bet-input"
+                    placeholder="Bet amount"
+                  />
+                  <div className="bet-info">
+                    <span>Win if item value > average</span>
+                    <span className="bet-multiplier">2x payout</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {betResult && (
+              <div className={`bet-result ${betResult.won ? 'win' : 'lose'}`}>
+                {betResult.won ? 
+                  `🎉 Bet Won! +${betResult.amount.toFixed(2)}` : 
+                  `❌ Bet Lost! -${betResult.amount.toFixed(2)}`
+                }
+              </div>
+            )}
           </div>
 
           {/* Item List with Values */}
