@@ -432,12 +432,10 @@ body {
 
 /* Chat - Clean & Normal Design */
 .chat-container {
-  height: calc(100vh - 200px);
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: white;
-  border: 1px solid #e1e5e9;
-  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -611,18 +609,7 @@ body {
   cursor: not-allowed;
 }
 
-.chat-zoom-out {
-  animation: zoomOut 0.3s ease-out;
-}
 
-@keyframes zoomOut {
-  0% {
-    transform: scale(1.02);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
 
 .no-messages {
   text-align: center;
@@ -957,7 +944,7 @@ body {
   }
 
   .chat-container {
-    height: calc(100vh - 160px);
+    height: 100vh;
   }
 
   .chat-header {
