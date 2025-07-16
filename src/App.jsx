@@ -298,8 +298,17 @@ function ChatPage({ user }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  // Demo messages for initial display
+  const demoMessages = [
+    {
+      id: 'demo1',
+      type: 'system',
+      timestamp: new Date().toISOString(),
+      messages: ['Welcome to the game store chat! Connect with other gamers here.']
+    }
+  ];
+
   useEffect(() => {
-   
     // Listen to chat messages from Firebase
     const messagesRef = ref(db, 'chat/messages');
     onValue(messagesRef, (snapshot) => {
@@ -482,7 +491,7 @@ function ChatPage({ user }) {
             😊
           </button>
         </form>
-        
+
         <div className="chat-footer">
           <div className="online-status">
             <span className="online-dot">●</span>
