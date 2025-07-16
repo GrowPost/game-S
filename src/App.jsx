@@ -7,11 +7,19 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import {
+  getDatabase,
+  ref,
+  set,
+  get,
+  onValue
+} from "firebase/database";
 import { firebaseConfig } from "./firebaseConfig";
 import "./App.css";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -27,12 +35,45 @@ export default function App() {
   ]);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Database functions
+  const createUserProfile = async (user) => {
+    const userRef = ref(db, `users/${user.uid}`);
+    const userSnap = await get(userRef);
+
+    if (!userSnap.exists()) {
+      await set(userRef, {
+        email: user.email,
+        balance: 125.50,
+        createdAt: new Date().toISOString()
+      });
+    }
+  };
+
+  const updateUserBalance = async (newBalance) => {
+    if (user) {
+      const userBalanceRef = ref(db, `users/${user.uid}/balance`);
+      await set(userBalanceRef, newBalance);
+    }
+  };
+
   useEffect(() => {
     onAuthStateChanged(auth, (u) => {
       setUser(u);
       // Check if user is admin (you can modify this logic)
       if (u && u.email === "admin@gamestore.com") {
         setIsAdmin(true);
+      }
+      if (u) {
+        createUserProfile(u);
+        // Listen to user balance changes
+        const userBalanceRef = ref(db, `users/${u.uid}/balance`);
+        const unsubscribe = onValue(userBalanceRef, (snapshot) => {
+          if (snapshot.exists()) {
+            setUserBalance(snapshot.val() || 0);
+          }
+        });
+
+        return () => unsubscribe();
       }
     });
   }, []);
@@ -85,8 +126,8 @@ export default function App() {
       </header>
 
       <div className="content">
-        {page === "home" && <HomePage products={products} userBalance={userBalance} setUserBalance={setUserBalance} />}
-        {page === "wallet" && <WalletPage balance={userBalance} setBalance={setUserBalance} />}
+        {page === "home" && <HomePage products={products} userBalance={userBalance} setUserBalance={setUserBalance} updateUserBalance={updateUserBalance} />}
+        {page === "wallet" && <WalletPage balance={userBalance} setBalance={setUserBalance} updateUserBalance={updateUserBalance} />}
         {page === "chat" && <ChatPage />}
         {page === "admin" && isAdmin && <AdminPage products={products} setProducts={setProducts} />}
         {page === "profile" && <ProfilePage user={user} />}
@@ -132,10 +173,11 @@ export default function App() {
   );
 }
 
-function HomePage({ products, userBalance, setUserBalance }) {
+function HomePage({ products, userBalance, setUserBalance, updateUserBalance }) {
   const handlePurchase = (product) => {
     if (userBalance >= product.price) {
-      setUserBalance(userBalance - product.price);
+      const newBalance = userBalance - product.price;
+      updateUserBalance(newBalance);
       alert(`Successfully purchased ${product.name}!`);
     } else {
       alert("Insufficient balance! Please add funds to your wallet.");
@@ -148,7 +190,7 @@ function HomePage({ products, userBalance, setUserBalance }) {
       <div className="balance-display">
         Your Balance: <span className="balance-amount">${userBalance.toFixed(2)}</span>
       </div>
-      
+
       <div className="products-grid">
         {products.map(product => (
           <div key={product.id} className="product-card">
@@ -170,16 +212,17 @@ function HomePage({ products, userBalance, setUserBalance }) {
   );
 }
 
-function WalletPage({ balance, setBalance }) {
+function WalletPage({ balance, setBalance, updateUserBalance }) {
   const handleAddFunds = (amount) => {
-    setBalance(balance + amount);
+    const newBalance = balance + amount;
+    updateUserBalance(newBalance);
     alert(`Successfully added $${amount} to your wallet!`);
   };
-  
+
   return (
     <div className="page-card">
       <h1 className="page-title">My Wallet</h1>
-      
+
       <div className="wallet-balance">
         <div className="balance-amount">${balance.toFixed(2)}</div>
         <p>Available Balance</p>
@@ -189,7 +232,7 @@ function WalletPage({ balance, setBalance }) {
           <button className="recharge-btn" onClick={() => handleAddFunds(50)}>Add $50</button>
         </div>
       </div>
-      
+
       <div className="feature-grid">
         <div className="feature-card">
           <div className="feature-icon">💳</div>
@@ -213,7 +256,7 @@ function ChatPage() {
       <p style={{ fontSize: "1.1rem", color: "#666", marginBottom: "30px" }}>
         Connect with fellow gamers
       </p>
-      
+
       <div style={{ 
         background: "rgba(102, 126, 234, 0.1)", 
         borderRadius: "15px", 
@@ -262,7 +305,7 @@ function AdminPage({ products, setProducts }) {
   return (
     <div className="page-card">
       <h1 className="page-title">Admin Panel</h1>
-      
+
       <div className="admin-section">
         <h2>Add New Product</h2>
         <div className="admin-form">
@@ -325,11 +368,11 @@ function AdminPage({ products, setProducts }) {
 
 function ProfilePage({ user }) {
   const getInitial = (email) => email.charAt(0).toUpperCase();
-  
+
   return (
     <div className="page-card">
       <h1 className="page-title">My Profile</h1>
-      
+
       <div className="profile-info">
         <div className="profile-avatar">
           {getInitial(user.email)}
@@ -339,7 +382,7 @@ function ProfilePage({ user }) {
           <p>{user.email}</p>
         </div>
       </div>
-      
+
       <div className="feature-grid">
         <div className="feature-card">
           <div className="feature-icon">🛍️</div>
@@ -360,4 +403,3 @@ function ProfilePage({ user }) {
     </div>
   );
 }
-
