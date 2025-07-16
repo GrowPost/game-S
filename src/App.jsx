@@ -152,9 +152,22 @@ export default function App() {
   return (
     <div className="main-container">
       <header className="header">
-        <div className="logo">GameStore</div>
+        <div className="logo">
+          <span className="logo-g">G</span>
+          <span>🎲</span>
+          <span className="logo-d">D</span>
+        </div>
+        <div className="wallet-section">
+          <div className="balance-display-header">
+            <span>🔒</span>
+            <span>${userBalance.toFixed(2)}</span>
+          </div>
+          <button className="wallet-btn">
+            👛
+          </button>
+        </div>
         <button className="logout-btn" onClick={() => signOut(auth)}>
-          Logout
+          👤
         </button>
       </header>
 
@@ -287,7 +300,7 @@ function ChatPage({ user }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [userProfiles, setUserProfiles] = useState({});
-  const [onlineUsers, setOnlineUsers] = useState(0);
+  const [onlineUsers, setOnlineUsers] = useState(98);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -295,16 +308,53 @@ function ChatPage({ user }) {
   }
 
   useEffect(() => {
-    // Listen to chat messages
+    // Add some demo messages to match the design
+    const demoMessages = [
+      {
+        id: 1,
+        text: "whats ur discord",
+        userId: "demo1",
+        userEmail: "man2ukas@demo.com",
+        timestamp: new Date().toISOString(),
+        type: "user",
+        avatar: "👤",
+        username: "man2ukas"
+      },
+      {
+        id: 2,
+        type: "system",
+        timestamp: new Date().toISOString(),
+        messages: [
+          "@Viljovehka, @sewtrix, @Valtsoo, @TopRich, @AdoyStupidGuy won 10 💰 each for participating in chat rain!",
+          "@Laesss, @8nikos8, @Zorotheracist, @droplugt2, @berkens69 won 10 💰 each for participating in chat rain!"
+        ]
+      },
+      {
+        id: 3,
+        text: "When will the slots work",
+        userId: "demo3",
+        userEmail: "s4monage@demo.com",
+        timestamp: new Date().toISOString(),
+        type: "user",
+        avatar: "🎮",
+        username: "s4monage",
+        level: 54
+      }
+    ];
+
+    setMessages(demoMessages);
+
+    // Listen to chat messages from Firebase
     const messagesRef = ref(db, 'chat/messages');
     onValue(messagesRef, (snapshot) => {
       if (snapshot.exists()) {
         const messagesData = snapshot.val();
         const messagesArray = Object.entries(messagesData).map(([key, value]) => ({
           id: key,
-          ...value
+          ...value,
+          type: "user"
         })).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        setMessages(messagesArray);
+        setMessages(prev => [...demoMessages, ...messagesArray]);
       }
     });
 
@@ -334,11 +384,9 @@ function ChatPage({ user }) {
           const now = new Date().getTime();
           const activeUsers = Object.values(onlineData).filter(userData => {
             const userTime = new Date(userData.timestamp).getTime();
-            return (now - userTime) < 60000; // Consider user online if active within last minute
+            return (now - userTime) < 60000;
           });
-          setOnlineUsers(activeUsers.length);
-        } else {
-          setOnlineUsers(0);
+          setOnlineUsers(98 + activeUsers.length);
         }
       });
 
@@ -354,7 +402,7 @@ function ChatPage({ user }) {
       return () => {
         unsubscribeOnline();
         clearInterval(activityInterval);
-        set(onlineRef, null); // Remove user from online list
+        set(onlineRef, null);
       };
     }
   }, [user]);
@@ -393,16 +441,50 @@ function ChatPage({ user }) {
     return profile?.avatar || userEmail.charAt(0).toUpperCase();
   };
 
-  return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <h1 className="page-title">Community Chat</h1>
-        <div className="online-count">
-          <span className="online-indicator">●</span>
-          {onlineUsers} online
+  const renderMessage = (message) => {
+    if (message.type === "system") {
+      return (
+        <div key={message.id} className="system-message">
+          <div className="system-header">
+            SYSTEM
+            <span className="system-time">{new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+          </div>
+          {message.messages.map((msg, index) => (
+            <div key={index} className="system-content">
+              <p dangerouslySetInnerHTML={{
+                __html: msg.replace(/@(\w+)/g, '<span class="username-mention">@$1</span>')
+              }} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    const isOwn = message.userId === user?.uid;
+    const displayName = message.username || getUserDisplayName(message.userId, message.userEmail);
+    const avatar = message.avatar || getUserAvatar(message.userId, message.userEmail);
+
+    return (
+      <div key={message.id} className={`message ${isOwn ? 'own-message' : ''}`}>
+        <div className="message-avatar">
+          {avatar}
+        </div>
+        <div className="message-content">
+          <div className="message-header">
+            <span className="message-author">{displayName}</span>
+            {message.level && (
+              <span className="user-level">LVL {message.level}</span>
+            )}
+            <span className="message-time">{new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+          </div>
+          <div className="message-text">{message.text}</div>
         </div>
       </div>
+    );
+  };
 
+  return (
+    <div className="chat-container">
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="no-messages">
@@ -410,40 +492,42 @@ function ChatPage({ user }) {
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
-          messages.map(message => (
-            <div key={message.id} className={`message ${message.userId === user.uid ? 'own-message' : ''}`}>
-              <div className="message-avatar">
-                {getUserAvatar(message.userId, message.userEmail)}
-              </div>
-              <div className="message-content">
-                <div className="message-header">
-                  <span className="message-author">{getUserDisplayName(message.userId, message.userEmail)}</span>
-                  <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
-                </div>
-                <div className="message-text">{message.text}</div>
-              </div>
-            </div>
-          ))
+          messages.map(renderMessage)
         )}
-         <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-input-container">
-        <textarea
-          className="chat-input"
-          placeholder="Type your message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          rows="3"
-        />
-        <button 
-          className="send-button"
-          onClick={sendMessage}
-          disabled={!newMessage.trim()}
-        >
-          Send
-        </button>
+        <form className="chat-input-form" onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+          <input
+            className="chat-input"
+            placeholder="Say something"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+          />
+          <button type="button" className="emoji-btn">
+            😊
+          </button>
+        </form>
+        
+        <div className="chat-footer">
+          <div className="online-status">
+            <span className="online-dot">●</span>
+            <span>{onlineUsers} <strong>online</strong></span>
+          </div>
+          <div className="chat-controls">
+            <span>150</span>
+            <button className="menu-btn">☰</button>
+            <button 
+              className="send-button"
+              onClick={sendMessage}
+              disabled={!newMessage.trim()}
+            >
+              Send
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
