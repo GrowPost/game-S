@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -288,6 +288,11 @@ function ChatPage({ user }) {
   const [newMessage, setNewMessage] = useState('');
   const [userProfiles, setUserProfiles] = useState({});
   const [onlineUsers, setOnlineUsers] = useState(0);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   useEffect(() => {
     // Listen to chat messages
@@ -315,7 +320,7 @@ function ChatPage({ user }) {
     if (user) {
       const onlineRef = ref(db, `chat/online/${user.uid}`);
       const onlineUsersRef = ref(db, 'chat/online');
-      
+
       // Set user as online
       set(onlineRef, {
         email: user.email,
@@ -353,6 +358,10 @@ function ChatPage({ user }) {
       };
     }
   }, [user]);
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages]);
 
   const sendMessage = async () => {
     if (newMessage.trim() && user) {
@@ -393,7 +402,7 @@ function ChatPage({ user }) {
           {onlineUsers} online
         </div>
       </div>
-      
+
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="no-messages">
@@ -416,6 +425,7 @@ function ChatPage({ user }) {
             </div>
           ))
         )}
+         <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-input-container">
@@ -566,7 +576,7 @@ function ProfilePage({ user }) {
   const [profile, setProfile] = useState({ displayName: '', avatar: '', bio: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ displayName: '', avatar: '', bio: '' });
-  
+
   const getInitial = (email) => email.charAt(0).toUpperCase();
 
   const avatarOptions = ['😀', '😎', '🤓', '🎮', '🎯', '⚡', '🔥', '💎', '🚀', '⭐'];
@@ -649,7 +659,7 @@ function ProfilePage({ user }) {
                 className="profile-input"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Avatar:</label>
               <div className="avatar-selection">
@@ -664,7 +674,7 @@ function ProfilePage({ user }) {
                 ))}
               </div>
             </div>
-            
+
             <div className="form-group">
               <label>Bio:</label>
               <textarea
@@ -675,7 +685,7 @@ function ProfilePage({ user }) {
                 rows="3"
               />
             </div>
-            
+
             <button className="save-profile-btn" onClick={saveProfile}>
               Save Changes
             </button>
