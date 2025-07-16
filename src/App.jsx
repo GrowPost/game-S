@@ -60,7 +60,7 @@ export default function App() {
       id: 1,
       name: "STARTER",
       price: 0.11,
-      image: "💀",,
+      image: "💀",
       rewards: ["🎮", "⚔️", "🛡️", "💎", "🪙", "🧪", "📜", "🔮", "👑", "🏆"]
     },
     {
