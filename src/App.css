@@ -432,7 +432,7 @@ body {
 
 /* Chat - Clean & Normal Design */
 .chat-container {
-  height: 75vh;
+  height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   background: white;
@@ -468,10 +468,8 @@ body {
 }
 
 .online-indicator {
-  width: 8px;
-  height: 8px;
-  background: #28a745;
-  border-radius: 50%;
+  font-size: 0.8rem;
+  color: #28a745;
 }
 
 .chat-messages {
@@ -946,7 +944,7 @@ body {
   }
 
   .chat-container {
-    height: 65vh;
+    height: calc(100vh - 160px);
   }
 
   .chat-header {

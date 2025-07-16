@@ -398,7 +398,7 @@ function ChatPage({ user }) {
       <div className="chat-header">
         <h1 className="page-title">Community Chat</h1>
         <div className="online-count">
-          <span className="online-indicator">🟢</span>
+          <span className="online-indicator">●</span>
           {onlineUsers} online
         </div>
       </div>
