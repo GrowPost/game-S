@@ -31,11 +31,6 @@ export default function App() {
   const [fastOpening, setFastOpening] = useState(false);
   const [unboxResult, setUnboxResult] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [currentGame, setCurrentGame] = useState('unboxing'); // 'unboxing' or 'dice'
-  const [diceResult, setDiceResult] = useState([1, 1]);
-  const [isDiceRolling, setIsDiceRolling] = useState(false);
-  const [betAmount, setBetAmount] = useState(0.10);
-  const [prediction, setPrediction] = useState('higher');
 
   const itemValues = {
     "🎮": 0.05,
@@ -167,42 +162,7 @@ export default function App() {
     }, spinDuration);
   };
 
-  const rollDice = async () => {
-    if (userBalance >= betAmount) {
-      setIsDiceRolling(true);
-      
-      // Deduct bet amount
-      const newBalance = userBalance - betAmount;
-      await updateUserBalance(newBalance);
-
-      const rollDuration = fastOpening ? 500 : 2000;
-
-      setTimeout(async () => {
-        const dice1 = Math.floor(Math.random() * 6) + 1;
-        const dice2 = Math.floor(Math.random() * 6) + 1;
-        const total = dice1 + dice2;
-        
-        setDiceResult([dice1, dice2]);
-        
-        // Check if player won
-        let won = false;
-        if (prediction === 'higher' && total > 7) won = true;
-        if (prediction === 'lower' && total < 7) won = true;
-        if (prediction === 'seven' && total === 7) won = true;
-        
-        if (won) {
-          let multiplier = 1.8; // higher/lower
-          if (prediction === 'seven') multiplier = 4.5; // seven pays more
-          
-          const winAmount = betAmount * multiplier;
-          const finalBalance = newBalance + winAmount;
-          await updateUserBalance(finalBalance);
-        }
-        
-        setIsDiceRolling(false);
-      }, rollDuration);
-    }
-  };
+  
 
   if (!user) {
     return (
@@ -251,20 +211,7 @@ export default function App() {
           <span>🎲</span>
           <span className="logo-d">D</span>
         </div>
-        <div className="game-nav">
-          <button 
-            className={`nav-game-btn ${currentGame === 'unboxing' ? 'active' : ''}`}
-            onClick={() => setCurrentGame('unboxing')}
-          >
-            📦 Boxes
-          </button>
-          <button 
-            className={`nav-game-btn ${currentGame === 'dice' ? 'active' : ''}`}
-            onClick={() => setCurrentGame('dice')}
-          >
-            🎲 Dice
-          </button>
-        </div>
+        
         <div className="balance-section">
           <div className="balance-display">
             <img src="/IMG_1858.webp" alt="balance" className="balance-icon" />
@@ -294,20 +241,18 @@ export default function App() {
 
       {/* Main Content */}
       <main className="unbox-main">
-        {currentGame === 'unboxing' ? (
-          <>
-            {/* Box Selection */}
-            <div className="box-selector">
-              {boxes.map(box => (
-                <button
-                  key={box.id}
-                  className={`box-select-btn ${selectedBox?.id === box.id ? 'active' : ''}`}
-                  onClick={() => setSelectedBox(box)}
-                >
-                  {box.image} {box.name}
-                </button>
-              ))}
-            </div>
+        {/* Box Selection */}
+        <div className="box-selector">
+          {boxes.map(box => (
+            <button
+              key={box.id}
+              className={`box-select-btn ${selectedBox?.id === box.id ? 'active' : ''}`}
+              onClick={() => setSelectedBox(box)}
+            >
+              {box.image} {box.name}
+            </button>
+          ))}
+        </div>
 
         {/* Box Display */}
         <div className="box-display">
@@ -387,97 +332,6 @@ export default function App() {
             </div>
           </div>
         </div>
-          </>
-        ) : (
-          <>
-            {/* Dice Game */}
-            <div className="dice-game">
-              <h2 className="game-title">🎲 Dice Roll</h2>
-              
-              {/* Dice Display */}
-              <div className="dice-container">
-                <div className={`dice ${isDiceRolling ? 'rolling' : ''}`}>
-                  {isDiceRolling ? '🎲' : ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][diceResult[0] - 1]}
-                </div>
-                <div className={`dice ${isDiceRolling ? 'rolling' : ''}`}>
-                  {isDiceRolling ? '🎲' : ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][diceResult[1] - 1]}
-                </div>
-              </div>
-              
-              {!isDiceRolling && (
-                <div className="dice-total">Total: {diceResult[0] + diceResult[1]}</div>
-              )}
-
-              {/* Betting Options */}
-              <div className="betting-section">
-                <div className="bet-amount">
-                  <label>Bet Amount:</label>
-                  <div className="bet-buttons">
-                    <button 
-                      className={`bet-btn ${betAmount === 0.05 ? 'active' : ''}`}
-                      onClick={() => setBetAmount(0.05)}
-                    >
-                      0.05
-                    </button>
-                    <button 
-                      className={`bet-btn ${betAmount === 0.10 ? 'active' : ''}`}
-                      onClick={() => setBetAmount(0.10)}
-                    >
-                      0.10
-                    </button>
-                    <button 
-                      className={`bet-btn ${betAmount === 0.25 ? 'active' : ''}`}
-                      onClick={() => setBetAmount(0.25)}
-                    >
-                      0.25
-                    </button>
-                    <button 
-                      className={`bet-btn ${betAmount === 0.50 ? 'active' : ''}`}
-                      onClick={() => setBetAmount(0.50)}
-                    >
-                      0.50
-                    </button>
-                  </div>
-                </div>
-
-                <div className="prediction-section">
-                  <label>Predict:</label>
-                  <div className="prediction-buttons">
-                    <button 
-                      className={`prediction-btn ${prediction === 'lower' ? 'active' : ''}`}
-                      onClick={() => setPrediction('lower')}
-                    >
-                      Lower (2-6) 
-                      <span className="multiplier">1.8x</span>
-                    </button>
-                    <button 
-                      className={`prediction-btn ${prediction === 'seven' ? 'active' : ''}`}
-                      onClick={() => setPrediction('seven')}
-                    >
-                      Seven (7)
-                      <span className="multiplier">4.5x</span>
-                    </button>
-                    <button 
-                      className={`prediction-btn ${prediction === 'higher' ? 'active' : ''}`}
-                      onClick={() => setPrediction('higher')}
-                    >
-                      Higher (8-12)
-                      <span className="multiplier">1.8x</span>
-                    </button>
-                  </div>
-                </div>
-
-                <button 
-                  className={`roll-btn ${userBalance < betAmount ? 'disabled' : ''}`}
-                  onClick={rollDice}
-                  disabled={userBalance < betAmount || isDiceRolling}
-                >
-                  {isDiceRolling ? 'Rolling...' : `Roll Dice (${betAmount.toFixed(2)})`}
-                </button>
-              </div>
-            </div>
-          </>
-        )}
       </main>
 
       {/* Bottom Navigation */}
