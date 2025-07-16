@@ -241,6 +241,7 @@ function HomePage({ products, userBalance, updateUserBalance, user, addPurchased
     <div className="page-card">
       <h1 className="page-title">Game Store</h1>
       <div className="balance-display">
+        <img src="/IMG_1859.png" alt="Wallet" className="wallet-icon" />
         Your Balance: <span className="balance-amount">${userBalance.toFixed(2)}</span>
       </div>
 
