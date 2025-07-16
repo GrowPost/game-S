@@ -280,19 +280,6 @@ export default function App() {
         <div className="box-info">
           <h2 className="box-title">{selectedBox?.name}</h2>
 
-          {/* Item List with Values */}
-          <div className="item-list">
-            <h3 className="item-list-title">Possible Items:</h3>
-            <div className="items-grid">
-              {selectedBox?.rewards.map((item, index) => (
-                <div key={index} className="item-card">
-                  <span className="item-emoji">{item}</span>
-                  <span className="item-value">{itemValues[item]?.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="box-actions">
             <button 
               className={`open-btn ${userBalance < selectedBox?.price ? 'disabled' : ''}`}
@@ -310,6 +297,19 @@ export default function App() {
             >
               Demo Spin
             </button>
+          </div>
+
+          {/* Item List with Values */}
+          <div className="item-list">
+            <h3 className="item-list-title">Possible Items:</h3>
+            <div className="items-grid">
+              {selectedBox?.rewards.map((item, index) => (
+                <div key={index} className="item-card">
+                  <span className="item-emoji">{item}</span>
+                  <span className="item-value">{itemValues[item]?.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <label className="fast-opening">
