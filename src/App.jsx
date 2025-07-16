@@ -27,12 +27,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userBalance, setUserBalance] = useState(125.50);
-  const [products, setProducts] = useState([
-    { id: 1, name: "Call of Duty: Modern Warfare", price: 59.99, image: "🎮", category: "Action" },
-    { id: 2, name: "The Legend of Zelda", price: 49.99, image: "⚔️", category: "Adventure" },
-    { id: 3, name: "FIFA 2024", price: 39.99, image: "⚽", category: "Sports" },
-    { id: 4, name: "Minecraft", price: 26.95, image: "🧱", category: "Sandbox" }
-  ]);
+  const [products, setProducts] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Database functions
@@ -56,6 +51,25 @@ export default function App() {
     }
   };
 
+  const addProduct = async (product) => {
+    const productRef = ref(db, `products/${product.id}`);
+    await set(productRef, product);
+  };
+
+  const deleteProduct = async (productId) => {
+    const productRef = ref(db, `products/${productId}`);
+    await set(productRef, null);
+  };
+
+  const addPurchasedProduct = async (userId, productId, code) => {
+    const purchaseRef = ref(db, `users/${userId}/purchases/${productId}`);
+    await set(purchaseRef, {
+      productId,
+      code,
+      purchaseDate: new Date().toISOString()
+    });
+  };
+
   useEffect(() => {
     onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -74,6 +88,25 @@ export default function App() {
         });
 
         return () => unsubscribe();
+      }
+    });
+
+    // Load products from database
+    const productsRef = ref(db, 'products');
+    onValue(productsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const productsData = snapshot.val();
+        const productsArray = Object.values(productsData);
+        setProducts(productsArray);
+      } else {
+        // Initialize with default products if none exist
+        const defaultProducts = [
+          { id: Date.now() + 1, name: "Call of Duty: Modern Warfare", price: 59.99, image: "🎮", category: "Action", code: "COD-MW-2024-X7Y9" },
+          { id: Date.now() + 2, name: "The Legend of Zelda", price: 49.99, image: "⚔️", category: "Adventure", code: "ZELDA-ADV-5K3L" },
+          { id: Date.now() + 3, name: "FIFA 2024", price: 39.99, image: "⚽", category: "Sports", code: "FIFA24-SP-9M2N" },
+          { id: Date.now() + 4, name: "Minecraft", price: 26.95, image: "🧱", category: "Sandbox", code: "MC-SB-8P4Q" }
+        ];
+        defaultProducts.forEach(product => addProduct(product));
       }
     });
   }, []);
@@ -126,10 +159,10 @@ export default function App() {
       </header>
 
       <div className="content">
-        {page === "home" && <HomePage products={products} userBalance={userBalance} setUserBalance={setUserBalance} updateUserBalance={updateUserBalance} />}
-        {page === "wallet" && <WalletPage balance={userBalance} setBalance={setUserBalance} updateUserBalance={updateUserBalance} />}
+        {page === "home" && <HomePage products={products} userBalance={userBalance} updateUserBalance={updateUserBalance} user={user} addPurchasedProduct={addPurchasedProduct} />}
+        {page === "wallet" && <WalletPage balance={userBalance} updateUserBalance={updateUserBalance} />}
         {page === "chat" && <ChatPage />}
-        {page === "admin" && isAdmin && <AdminPage products={products} setProducts={setProducts} />}
+        {page === "admin" && isAdmin && <AdminPage products={products} addProduct={addProduct} deleteProduct={deleteProduct} />}
         {page === "profile" && <ProfilePage user={user} />}
       </div>
 
@@ -173,12 +206,13 @@ export default function App() {
   );
 }
 
-function HomePage({ products, userBalance, setUserBalance, updateUserBalance }) {
-  const handlePurchase = (product) => {
+function HomePage({ products, userBalance, updateUserBalance, user, addPurchasedProduct }) {
+  const handlePurchase = async (product) => {
     if (userBalance >= product.price) {
       const newBalance = userBalance - product.price;
-      updateUserBalance(newBalance);
-      alert(`Successfully purchased ${product.name}!`);
+      await updateUserBalance(newBalance);
+      await addPurchasedProduct(user.uid, product.id, product.code);
+      alert(`Successfully purchased ${product.name}!\n\nYour activation code: ${product.code}\n\nThis code has been saved to your profile.`);
     } else {
       alert("Insufficient balance! Please add funds to your wallet.");
     }
@@ -212,7 +246,7 @@ function HomePage({ products, userBalance, setUserBalance, updateUserBalance }) 
   );
 }
 
-function WalletPage({ balance, setBalance, updateUserBalance }) {
+function WalletPage({ balance, updateUserBalance }) {
   const handleAddFunds = (amount) => {
     const newBalance = balance + amount;
     updateUserBalance(newBalance);
@@ -272,33 +306,45 @@ function ChatPage() {
   );
 }
 
-function AdminPage({ products, setProducts }) {
+function AdminPage({ products, addProduct, deleteProduct }) {
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
     image: '🎮',
-    category: ''
+    category: '',
+    code: ''
   });
 
-  const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price && newProduct.category) {
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      if (i === 4 || i === 8) result += '-';
+      else result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleAddProduct = async () => {
+    if (newProduct.name && newProduct.price && newProduct.category && newProduct.code) {
       const product = {
         id: Date.now(),
         name: newProduct.name,
         price: parseFloat(newProduct.price),
         image: newProduct.image,
-        category: newProduct.category
+        category: newProduct.category,
+        code: newProduct.code
       };
-      setProducts([...products, product]);
-      setNewProduct({ name: '', price: '', image: '🎮', category: '' });
+      await addProduct(product);
+      setNewProduct({ name: '', price: '', image: '🎮', category: '', code: '' });
       alert('Product added successfully!');
     } else {
-      alert('Please fill in all fields');
+      alert('Please fill in all fields including the activation code');
     }
   };
 
-  const handleDeleteProduct = (id) => {
-    setProducts(products.filter(p => p.id !== id));
+  const handleDeleteProduct = async (id) => {
+    await deleteProduct(id);
     alert('Product deleted successfully!');
   };
 
@@ -330,6 +376,22 @@ function AdminPage({ products, setProducts }) {
             onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
             className="admin-input"
           />
+          <div className="code-input-group">
+            <input
+              type="text"
+              placeholder="Activation Code"
+              value={newProduct.code}
+              onChange={(e) => setNewProduct({...newProduct, code: e.target.value})}
+              className="admin-input"
+            />
+            <button 
+              type="button"
+              className="generate-code-btn"
+              onClick={() => setNewProduct({...newProduct, code: generateRandomCode()})}
+            >
+              Generate
+            </button>
+          </div>
           <select 
             value={newProduct.image}
             onChange={(e) => setNewProduct({...newProduct, image: e.target.value})}
@@ -367,7 +429,23 @@ function AdminPage({ products, setProducts }) {
 }
 
 function ProfilePage({ user }) {
+  const [purchases, setPurchases] = useState([]);
   const getInitial = (email) => email.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    if (user) {
+      const purchasesRef = ref(db, `users/${user.uid}/purchases`);
+      onValue(purchasesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const purchasesData = snapshot.val();
+          const purchasesArray = Object.values(purchasesData);
+          setPurchases(purchasesArray);
+        } else {
+          setPurchases([]);
+        }
+      });
+    }
+  }, [user]);
 
   return (
     <div className="page-card">
@@ -382,6 +460,31 @@ function ProfilePage({ user }) {
           <p>{user.email}</p>
         </div>
       </div>
+
+      {purchases.length > 0 && (
+        <div className="purchases-section">
+          <h2>My Game Library</h2>
+          <div className="purchases-list">
+            {purchases.map((purchase, index) => (
+              <div key={index} className="purchase-item">
+                <div className="purchase-info">
+                  <h4>Game Code: {purchase.code}</h4>
+                  <p>Purchased: {new Date(purchase.purchaseDate).toLocaleDateString()}</p>
+                </div>
+                <button 
+                  className="copy-code-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(purchase.code);
+                    alert('Code copied to clipboard!');
+                  }}
+                >
+                  Copy Code
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="feature-grid">
         <div className="feature-card">

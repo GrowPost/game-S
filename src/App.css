@@ -449,6 +449,87 @@ body {
   box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
 }
 
+.code-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.code-input-group input {
+  flex: 1;
+}
+
+.generate-code-btn {
+  background: linear-gradient(135deg, #10ac84, #00d2d3);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.generate-code-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 172, 132, 0.3);
+}
+
+.purchases-section {
+  margin-bottom: 30px;
+}
+
+.purchases-section h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.purchases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.purchase-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  border: 1px solid #e1e5e9;
+}
+
+.purchase-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.purchase-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.copy-code-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.copy-code-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
 @media (max-width: 768px) {
   .auth-card {
     padding: 30px 20px;
