@@ -29,6 +29,7 @@ export default function App() {
   const [userBalance, setUserBalance] = useState(125.50);
   const [products, setProducts] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   // Database functions
   const createUserProfile = async (user) => {
@@ -162,13 +163,30 @@ export default function App() {
             <span>🔒</span>
             <span>${userBalance.toFixed(2)}</span>
           </div>
-          <button className="wallet-btn">
+          <button className="wallet-btn" onClick={() => setPage("wallet")}>
             👛
           </button>
         </div>
-        <button className="logout-btn" onClick={() => signOut(auth)}>
-          👤
-        </button>
+        <div className="profile-section">
+          <button 
+            className="profile-btn" 
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+          >
+            👤
+          </button>
+          {showProfileDropdown && (
+            <div className="profile-dropdown">
+              <div className="profile-dropdown-item" onClick={() => { setPage("profile"); setShowProfileDropdown(false); }}>
+                <span>👤</span>
+                <span>Profile</span>
+              </div>
+              <div className="profile-dropdown-item" onClick={() => { signOut(auth); setShowProfileDropdown(false); }}>
+                <span>🚪</span>
+                <span>Logout</span>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="content">
@@ -188,12 +206,6 @@ export default function App() {
             🏠 Home
           </button>
           <button 
-            className={`nav-btn ${page === "wallet" ? "active" : ""}`}
-            onClick={() => setPage("wallet")}
-          >
-            👛 Wallet
-          </button>
-          <button 
             className={`nav-btn ${page === "chat" ? "active" : ""}`}
             onClick={() => setPage("chat")}
           >
@@ -207,12 +219,6 @@ export default function App() {
               👑 Admin
             </button>
           )}
-          <button 
-            className={`nav-btn ${page === "profile" ? "active" : ""}`}
-            onClick={() => setPage("profile")}
-          >
-            👤 Profile
-          </button>
         </div>
       </nav>
     </div>
