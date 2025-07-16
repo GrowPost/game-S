@@ -32,6 +32,26 @@ export default function App() {
   const [unboxResult, setUnboxResult] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
+  const itemValues = {
+    "🎮": 0.05,
+    "⚔️": 0.08,
+    "🛡️": 0.12,
+    "💎": 0.25,
+    "🪙": 0.03,
+    "🧪": 0.15,
+    "📜": 0.10,
+    "🔮": 0.20,
+    "👑": 0.50,
+    "🏆": 0.75,
+    "⚡": 0.30,
+    "🔥": 0.35,
+    "💫": 0.40,
+    "🌟": 0.45,
+    "✨": 0.22,
+    "🎯": 0.18,
+    "🚀": 0.60
+  };
+
   const boxes = [
     {
       id: 1,
@@ -113,9 +133,15 @@ export default function App() {
 
       const spinDuration = fastOpening ? 1000 : 3000;
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const randomIndex = Math.floor(Math.random() * box.rewards.length);
         const reward = box.rewards[randomIndex];
+        const itemValue = itemValues[reward] || 0;
+        
+        // Add item value to balance
+        const finalBalance = newBalance + itemValue;
+        await updateUserBalance(finalBalance);
+        
         setUnboxResult(reward);
         setIsSpinning(false);
       }, spinDuration);
@@ -237,7 +263,10 @@ export default function App() {
                 ))}
               </div>
             ) : unboxResult ? (
-              <div className="result-emoji">{unboxResult}</div>
+              <div className="result-container">
+                <div className="result-emoji">{unboxResult}</div>
+                <div className="result-value">+{itemValues[unboxResult]?.toFixed(2)}</div>
+              </div>
             ) : (
               <div className="box-emoji">{selectedBox?.image}</div>
             )}
@@ -247,6 +276,19 @@ export default function App() {
         {/* Box Info */}
         <div className="box-info">
           <h2 className="box-title">{selectedBox?.name}</h2>
+
+          {/* Item List with Values */}
+          <div className="item-list">
+            <h3 className="item-list-title">Possible Items:</h3>
+            <div className="items-grid">
+              {selectedBox?.rewards.map((item, index) => (
+                <div key={index} className="item-card">
+                  <span className="item-emoji">{item}</span>
+                  <span className="item-value">{itemValues[item]?.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="box-actions">
             <button 
