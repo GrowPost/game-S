@@ -1,0 +1,113 @@
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Starter Box
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+ </head>
+ <body class="bg-[#12151c] text-[#8a8f9a] min-h-screen flex flex-col">
+  <!-- Top Navbar -->
+  <header class="flex items-center justify-between px-4 py-3 bg-[#12151c] border-b border-[#1f222a]">
+   <div class="flex items-center space-x-1">
+    <span class="text-white text-3xl font-extrabold select-none">
+     G
+    </span>
+    <img alt="Dice icon pixel art" class="w-8 h-8" height="32" src="https://storage.googleapis.com/a1aa/image/4134d07b-d107-4ece-f46e-fb4b21ebd886.jpg" width="32"/>
+    <span class="text-[#4a7aff] text-3xl font-extrabold select-none">
+     D
+    </span>
+   </div>
+   <div class="flex items-center rounded-md overflow-hidden text-white text-lg font-semibold">
+    <button class="flex items-center space-x-2 bg-[#1f222a] px-3 py-2 rounded-l-md">
+     <img alt="Lock icon pixel art" class="w-6 h-6" height="24" src="https://storage.googleapis.com/a1aa/image/bed014d9-c27d-40d2-c737-97f1ea77c289.jpg" width="24"/>
+     <span>
+      0.00
+     </span>
+    </button>
+    <button class="bg-[#2f64f7] px-4 py-2 rounded-r-md flex items-center justify-center">
+     <i class="fas fa-wallet text-white text-lg">
+     </i>
+    </button>
+   </div>
+   <div>
+    <img alt="Pixel art avatar of a person with brown hair, blue hat, and red earrings" class="w-10 h-10 rounded-md" height="40" src="https://storage.googleapis.com/a1aa/image/9fbe17d2-09d7-4967-b260-12b450aeec6b.jpg" width="40"/>
+   </div>
+  </header>
+  <!-- Main Content -->
+  <main class="flex-grow overflow-y-auto px-6 pt-6 pb-20">
+   <button aria-label="Back" class="flex items-center space-x-2 text-[#8a8f9a] text-lg font-semibold mb-6">
+    <svg class="h-6 w-6" fill="none" stroke="#8a8f9a" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+     <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round">
+     </path>
+    </svg>
+    <span>
+     BACK
+    </span>
+   </button>
+   <div class="flex justify-center mb-8">
+    <img alt="Pixel art of a red wooden chest with silver chains and red gloves inside" class="w-40 h-30" height="120" src="https://storage.googleapis.com/a1aa/image/96e65568-f235-4f17-3f81-af3dc4ded306.jpg" width="160"/>
+   </div>
+   <h2 class="text-white text-2xl font-bold mb-4">
+    STARTER
+   </h2>
+   <div class="flex flex-wrap gap-4 mb-4">
+    <button class="flex items-center space-x-2 bg-[#1f4483] text-[#6f7f9f] text-lg font-semibold rounded-md px-5 py-3 cursor-not-allowed select-none" disabled="">
+     <span>
+      Open for 0.11
+     </span>
+     <img alt="Lock icon pixel art" class="w-6 h-6" height="24" src="https://storage.googleapis.com/a1aa/image/bed014d9-c27d-40d2-c737-97f1ea77c289.jpg" width="24"/>
+    </button>
+    <button class="bg-[#1f222a] text-white text-lg font-semibold rounded-md px-6 py-3 hover:bg-[#2a2e3a] transition">
+     Demo Spin
+    </button>
+   </div>
+   <label class="flex items-center space-x-3 text-lg cursor-pointer select-none mb-10">
+    <input class="w-6 h-6 rounded border border-[#2a2e3a] bg-[#12151c] checked:bg-[#2a2e3a] focus:ring-0" type="checkbox"/>
+    <span>
+     Fast Opening
+    </span>
+   </label>
+   <div class="flex items-center space-x-4 text-[#6f7f9f] text-lg font-semibold">
+    <div class="flex items-center space-x-2">
+     <i class="fas fa-shield-alt text-[#6f7f9f]">
+     </i>
+     <span>
+      Provably Fair
+     </span>
+    </div>
+    <div class="flex items-center space-x-2">
+     <i class="fas fa-cog text-[#6f7f9f]">
+     </i>
+     <span>
+      Settings
+     </span>
+    </div>
+   </div>
+  </main>
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#12151c] border-t border-[#1f222a] flex justify-between px-10 py-3">
+   <button aria-label="Chat" class="text-white text-2xl">
+    <i class="fas fa-comment-alt">
+    </i>
+   </button>
+   <button aria-label="Wallet" class="text-white text-2xl">
+    <i class="fas fa-wallet">
+    </i>
+   </button>
+   <button aria-label="Menu" class="text-white text-2xl">
+    <i class="fas fa-bars">
+    </i>
+   </button>
+  </nav>
+ </body>
+</html>
