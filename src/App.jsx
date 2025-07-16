@@ -779,8 +779,9 @@ function ProfilePage({ user }) {
                 </button>
               </div>
             ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
