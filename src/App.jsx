@@ -27,7 +27,8 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userBalance, setUserBalance] = useState(0);
-  const [products, setProducts] = useState([]);
+  const [boxes, setBoxes] = useState([]);
+  const [userInventory, setUserInventory] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
@@ -52,23 +53,19 @@ export default function App() {
     }
   };
 
-  const addProduct = async (product) => {
-    const productRef = ref(db, `products/${product.id}`);
-    await set(productRef, product);
+  const addBox = async (box) => {
+    const boxRef = ref(db, `boxes/${box.id}`);
+    await set(boxRef, box);
   };
 
-  const deleteProduct = async (productId) => {
-    const productRef = ref(db, `products/${productId}`);
-    await set(productRef, null);
+  const deleteBox = async (boxId) => {
+    const boxRef = ref(db, `boxes/${boxId}`);
+    await set(boxRef, null);
   };
 
-  const addPurchasedProduct = async (userId, productId, code) => {
-    const purchaseRef = ref(db, `users/${userId}/purchases/${productId}`);
-    await set(purchaseRef, {
-      productId,
-      code,
-      purchaseDate: new Date().toISOString()
-    });
+  const addInventoryItem = async (userId, item) => {
+    const inventoryRef = ref(db, `users/${userId}/inventory/${item.name}`);
+    await set(inventoryRef, item);
   };
 
   useEffect(() => {
@@ -92,17 +89,74 @@ export default function App() {
       }
     });
 
-    // Load products from database
-    const productsRef = ref(db, 'products');
-    onValue(productsRef, (snapshot) => {
+    // Default boxes
+    const defaultBoxes = [
+      {
+        id: 1,
+        name: "Common Box",
+        price: 10,
+        image: "📦",
+        rarity: "Common",
+        rewards: [
+          { name: "Steel Sword", emoji: "⚔️", rarity: "Common", value: 5 },
+          { name: "Health Potion", emoji: "🧪", rarity: "Common", value: 3 },
+          { name: "Gold Coins", emoji: "🪙", rarity: "Common", value: 8 },
+          { name: "Magic Ring", emoji: "💍", rarity: "Rare", value: 15 },
+        ]
+      },
+      {
+        id: 2,
+        name: "Rare Box",
+        price: 25,
+        image: "💎",
+        rarity: "Rare",
+        rewards: [
+          { name: "Diamond Sword", emoji: "💎", rarity: "Epic", value: 50 },
+          { name: "Legendary Shield", emoji: "🛡️", rarity: "Legendary", value: 100 },
+          { name: "Phoenix Feather", emoji: "🪶", rarity: "Epic", value: 75 },
+          { name: "Crystal Staff", emoji: "🔮", rarity: "Rare", value: 30 },
+        ]
+      },
+      {
+        id: 3,
+        name: "Epic Box",
+        price: 50,
+        image: "🎁",
+        rarity: "Epic",
+        rewards: [
+          { name: "Dragon Scale", emoji: "🐲", rarity: "Legendary", value: 200 },
+          { name: "Mystic Orb", emoji: "🔮", rarity: "Epic", value: 150 },
+          { name: "Crown of Kings", emoji: "👑", rarity: "Legendary", value: 300 },
+          { name: "Void Crystal", emoji: "💜", rarity: "Mythic", value: 500 },
+        ]
+      }
+    ];
+
+    // Load boxes from database
+    const boxesRef = ref(db, 'boxes');
+    onValue(boxesRef, (snapshot) => {
       if (snapshot.exists()) {
-        const productsData = snapshot.val();
-        const productsArray = Object.values(productsData);
-        setProducts(productsArray);
+        const boxesData = snapshot.val();
+        const boxesArray = Object.values(boxesData);
+        setBoxes(boxesArray);
       } else {
-        defaultProducts.forEach(product => addProduct(product));
+        defaultBoxes.forEach(box => addBox(box));
       }
     });
+
+    // Load user inventory
+    if (user) {
+      const inventoryRef = ref(db, `users/${user.uid}/inventory`);
+      onValue(inventoryRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const inventoryData = snapshot.val();
+          const inventoryArray = Object.values(inventoryData);
+          setUserInventory(inventoryArray);
+        } else {
+          setUserInventory([]);
+        }
+      });
+    }
   }, []);
 
   if (!user) {
@@ -183,10 +237,10 @@ export default function App() {
       </header>
 
       <div className="content">
-        {page === "home" && <HomePage products={products} userBalance={userBalance} updateUserBalance={updateUserBalance} user={user} addPurchasedProduct={addPurchasedProduct} />}
+        {page === "home" && <HomePage boxes={boxes} userBalance={userBalance} updateUserBalance={updateUserBalance} user={user} addInventoryItem={addInventoryItem} />}
         {page === "wallet" && <WalletPage balance={userBalance} updateUserBalance={updateUserBalance} />}
         {page === "chat" && <ChatPage user={user} />}
-        {page === "admin" && isAdmin && <AdminPage products={products} addProduct={addProduct} deleteProduct={deleteProduct} />}
+        {page === "admin" && isAdmin && <AdminPage boxes={boxes} addBox={addBox} deleteBox={deleteBox} />}
         {page === "profile" && <ProfilePage user={user} />}
       </div>
 
@@ -218,13 +272,20 @@ export default function App() {
   );
 }
 
-function HomePage({ products, userBalance, updateUserBalance, user, addPurchasedProduct }) {
-  const handlePurchase = async (product) => {
-    if (userBalance >= product.price) {
-      const newBalance = userBalance - product.price;
+function HomePage({ boxes, userBalance, updateUserBalance, user, addInventoryItem }) {
+  const handleUnboxing = async (box) => {
+    if (userBalance >= box.price) {
+      const newBalance = userBalance - box.price;
       await updateUserBalance(newBalance);
-      await addPurchasedProduct(user.uid, product.id, product.code);
-      alert(`Successfully purchased ${product.name}!\n\nYour activation code: ${product.code}\n\nThis code has been saved to your profile.`);
+
+      // Select a random reward from the box
+      const randomIndex = Math.floor(Math.random() * box.rewards.length);
+      const reward = box.rewards[randomIndex];
+
+      // Add the reward to the user's inventory
+      await addInventoryItem(user.uid, reward);
+
+      alert(`Congratulations! You unboxed a ${reward.name} ${reward.emoji} from the ${box.name}!`);
     } else {
       alert("Insufficient balance! Please add funds to your wallet.");
     }
@@ -232,21 +293,21 @@ function HomePage({ products, userBalance, updateUserBalance, user, addPurchased
 
   return (
     <div className="page-card">
-      <h1 className="page-title">Game Store</h1>
+      <h1 className="page-title">Unboxing</h1>
 
       <div className="products-grid">
-        {products.map(product => (
-          <div key={product.id} className="product-card">
-            <div className="product-image">{product.image}</div>
-            <h3 className="product-name">{product.name}</h3>
-            <p className="product-category">{product.category}</p>
-            <div className="product-price">${product.price}</div>
+        {boxes.map(box => (
+          <div key={box.id} className="product-card">
+            <div className="product-image">{box.image}</div>
+            <h3 className="product-name">{box.name}</h3>
+            <p className="product-category">{box.rarity}</p>
+            <div className="product-price">${box.price}</div>
             <button 
-              className={`buy-btn ${userBalance < product.price ? 'disabled' : ''}`}
-              onClick={() => handlePurchase(product)}
-              disabled={userBalance < product.price}
+              className={`buy-btn ${userBalance < box.price ? 'disabled' : ''}`}
+              onClick={() => handleUnboxing(box)}
+              disabled={userBalance < box.price}
             >
-              {userBalance >= product.price ? 'Buy Now' : 'Insufficient Funds'}
+              {userBalance >= box.price ? 'Unbox Now' : 'Insufficient Funds'}
             </button>
           </div>
         ))}
@@ -514,46 +575,36 @@ function ChatPage({ user }) {
   );
 }
 
-function AdminPage({ products, addProduct, deleteProduct }) {
-  const [newProduct, setNewProduct] = useState({
+function AdminPage({ boxes, addBox, deleteBox }) {
+  const [newBox, setNewBox] = useState({
     name: '',
     price: '',
-    image: '🎮',
-    category: '',
-    code: ''
+    image: '📦',
+    rarity: '',
+    rewards: []
   });
 
-  const generateRandomCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 12; i++) {
-      if (i === 4 || i === 8) result += '-';
-      else result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
-  const handleAddProduct = async () => {
-    if (newProduct.name && newProduct.price && newProduct.category && newProduct.code) {
-      const product = {
+  const handleAddBox = async () => {
+    if (newBox.name && newBox.price && newBox.rarity) {
+      const box = {
         id: Date.now(),
-        name: newProduct.name,
-        price: parseFloat(newProduct.price),
-        image: newProduct.image,
-        category: newProduct.category,
-        code: newProduct.code
+        name: newBox.name,
+        price: parseFloat(newBox.price),
+        image: newBox.image,
+        rarity: newBox.rarity,
+        rewards: [] // You can add a feature to add rewards here
       };
-      await addProduct(product);
-      setNewProduct({ name: '', price: '', image: '🎮', category: '', code: '' });
-      alert('Product added successfully!');
+      await addBox(box);
+      setNewBox({ name: '', price: '', image: '📦', rarity: '', rewards: [] });
+      alert('Box added successfully!');
     } else {
-      alert('Please fill in all fields including the activation code');
+      alert('Please fill in all fields');
     }
   };
 
-  const handleDeleteProduct = async (id) => {
-    await deleteProduct(id);
-    alert('Product deleted successfully!');
+  const handleDeleteBox = async (id) => {
+    await deleteBox(id);
+    alert('Box deleted successfully!');
   };
 
   return (
@@ -561,70 +612,51 @@ function AdminPage({ products, addProduct, deleteProduct }) {
       <h1 className="page-title">Admin Panel</h1>
 
       <div className="admin-section">
-        <h2>Add New Product</h2>
+        <h2>Add New Box</h2>
         <div className="admin-form">
           <input
             type="text"
-            placeholder="Product Name"
-            value={newProduct.name}
-            onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+            placeholder="Box Name"
+            value={newBox.name}
+            onChange={(e) => setNewBox({...newBox, name: e.target.value})}
             className="admin-input"
           />
           <input
             type="number"
             placeholder="Price"
-            value={newProduct.price}
-            onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+            value={newBox.price}
+            onChange={(e) => setNewBox({...newBox, price: e.target.value})}
             className="admin-input"
           />
           <input
             type="text"
-            placeholder="Category"
-            value={newProduct.category}
-            onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+            placeholder="Rarity"
+            value={newBox.rarity}
+            onChange={(e) => setNewBox({...newBox, rarity: e.target.value})}
             className="admin-input"
           />
-          <div className="code-input-group">
-            <input
-              type="text"
-              placeholder="Activation Code"
-              value={newProduct.code}
-              onChange={(e) => setNewProduct({...newProduct, code: e.target.value})}
-              className="admin-input"
-            />
-            <button 
-              type="button"
-              className="generate-code-btn"
-              onClick={() => setNewProduct({...newProduct, code: generateRandomCode()})}
-            >
-              Generate
-            </button>
-          </div>
           <select 
-            value={newProduct.image}
-            onChange={(e) => setNewProduct({...newProduct, image: e.target.value})}
+            value={newBox.image}
+            onChange={(e) => setNewBox({...newBox, image: e.target.value})}
             className="admin-input"
           >
-            <option value="🎮">🎮</option>
-            <option value="⚔️">⚔️</option>
-            <option value="⚽">⚽</option>
-            <option value="🧱">🧱</option>
-            <option value="🏎️">🏎️</option>
-            <option value="👾">👾</option>
+            <option value="📦">📦</option>
+            <option value="💎">💎</option>
+            <option value="🎁">🎁</option>
           </select>
-          <button className="admin-btn" onClick={handleAddProduct}>Add Product</button>
+          <button className="admin-btn" onClick={handleAddBox}>Add Box</button>
         </div>
       </div>
 
       <div className="admin-section">
-        <h2>Manage Products</h2>
+        <h2>Manage Boxes</h2>
         <div className="admin-products">
-          {products.map(product => (
-            <div key={product.id} className="admin-product-card">
-              <span>{product.image} {product.name} - ${product.price}</span>
+          {boxes.map(box => (
+            <div key={box.id} className="admin-product-card">
+              <span>{box.image} {box.name} - ${box.price}</span>
               <button 
                 className="delete-btn"
-                onClick={() => handleDeleteProduct(product.id)}
+                onClick={() => handleDeleteBox(box.id)}
               >
                 Delete
               </button>
