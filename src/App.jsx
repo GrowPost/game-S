@@ -161,7 +161,7 @@ export default function App() {
       <div className="content">
         {page === "home" && <HomePage products={products} userBalance={userBalance} updateUserBalance={updateUserBalance} user={user} addPurchasedProduct={addPurchasedProduct} />}
         {page === "wallet" && <WalletPage balance={userBalance} updateUserBalance={updateUserBalance} />}
-        {page === "chat" && <ChatPage />}
+        {page === "chat" && <ChatPage user={user} />}
         {page === "admin" && isAdmin && <AdminPage products={products} addProduct={addProduct} deleteProduct={deleteProduct} />}
         {page === "profile" && <ProfilePage user={user} />}
       </div>
@@ -283,24 +283,108 @@ function WalletPage({ balance, updateUserBalance }) {
   );
 }
 
-function ChatPage() {
-  return (
-    <div className="page-card">
-      <h1 className="page-title">Community Chat</h1>
-      <p style={{ fontSize: "1.1rem", color: "#666", marginBottom: "30px" }}>
-        Connect with fellow gamers
-      </p>
+function ChatPage({ user }) {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [userProfiles, setUserProfiles] = useState({});
 
-      <div style={{ 
-        background: "rgba(102, 126, 234, 0.1)", 
-        borderRadius: "15px", 
-        padding: "30px", 
-        textAlign: "center",
-        border: "2px dashed #667eea"
-      }}>
-        <div style={{ fontSize: "3rem", marginBottom: "15px" }}>💬</div>
-        <h3>Chat Coming Soon</h3>
-        <p>Real-time messaging with the gaming community will be available here</p>
+  useEffect(() => {
+    // Listen to chat messages
+    const messagesRef = ref(db, 'chat/messages');
+    onValue(messagesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const messagesData = snapshot.val();
+        const messagesArray = Object.entries(messagesData).map(([key, value]) => ({
+          id: key,
+          ...value
+        })).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setMessages(messagesArray);
+      }
+    });
+
+    // Listen to user profiles
+    const profilesRef = ref(db, 'userProfiles');
+    onValue(profilesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setUserProfiles(snapshot.val());
+      }
+    });
+  }, []);
+
+  const sendMessage = async () => {
+    if (newMessage.trim() && user) {
+      const messageRef = ref(db, `chat/messages/${Date.now()}`);
+      await set(messageRef, {
+        text: newMessage,
+        userId: user.uid,
+        userEmail: user.email,
+        timestamp: new Date().toISOString()
+      });
+      setNewMessage('');
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const getUserDisplayName = (userId, userEmail) => {
+    const profile = userProfiles[userId];
+    return profile?.displayName || userEmail.split('@')[0];
+  };
+
+  const getUserAvatar = (userId, userEmail) => {
+    const profile = userProfiles[userId];
+    return profile?.avatar || userEmail.charAt(0).toUpperCase();
+  };
+
+  return (
+    <div className="page-card chat-container">
+      <h1 className="page-title">Community Chat</h1>
+      
+      <div className="chat-messages">
+        {messages.length === 0 ? (
+          <div className="no-messages">
+            <div className="chat-icon">💬</div>
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map(message => (
+            <div key={message.id} className={`message ${message.userId === user.uid ? 'own-message' : ''}`}>
+              <div className="message-avatar">
+                {getUserAvatar(message.userId, message.userEmail)}
+              </div>
+              <div className="message-content">
+                <div className="message-header">
+                  <span className="message-author">{getUserDisplayName(message.userId, message.userEmail)}</span>
+                  <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div className="message-text">{message.text}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="chat-input-container">
+        <textarea
+          className="chat-input"
+          placeholder="Type your message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          rows="3"
+        />
+        <button 
+          className="send-button"
+          onClick={sendMessage}
+          disabled={!newMessage.trim()}
+        >
+          Send
+        </button>
       </div>
     </div>
   );
@@ -430,10 +514,17 @@ function AdminPage({ products, addProduct, deleteProduct }) {
 
 function ProfilePage({ user }) {
   const [purchases, setPurchases] = useState([]);
+  const [profile, setProfile] = useState({ displayName: '', avatar: '', bio: '' });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ displayName: '', avatar: '', bio: '' });
+  
   const getInitial = (email) => email.charAt(0).toUpperCase();
+
+  const avatarOptions = ['😀', '😎', '🤓', '🎮', '🎯', '⚡', '🔥', '💎', '🚀', '⭐'];
 
   useEffect(() => {
     if (user) {
+      // Load purchases
       const purchasesRef = ref(db, `users/${user.uid}/purchases`);
       onValue(purchasesRef, (snapshot) => {
         if (snapshot.exists()) {
@@ -444,8 +535,36 @@ function ProfilePage({ user }) {
           setPurchases([]);
         }
       });
+
+      // Load user profile
+      const profileRef = ref(db, `userProfiles/${user.uid}`);
+      onValue(profileRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const profileData = snapshot.val();
+          setProfile(profileData);
+          setEditForm(profileData);
+        } else {
+          // Create default profile
+          const defaultProfile = {
+            displayName: user.email.split('@')[0],
+            avatar: getInitial(user.email),
+            bio: 'Gaming enthusiast'
+          };
+          setProfile(defaultProfile);
+          setEditForm(defaultProfile);
+        }
+      });
     }
   }, [user]);
+
+  const saveProfile = async () => {
+    if (user) {
+      const profileRef = ref(db, `userProfiles/${user.uid}`);
+      await set(profileRef, editForm);
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+    }
+  };
 
   return (
     <div className="page-card">
@@ -453,13 +572,67 @@ function ProfilePage({ user }) {
 
       <div className="profile-info">
         <div className="profile-avatar">
-          {getInitial(user.email)}
+          {profile.avatar}
         </div>
         <div className="profile-details">
-          <h3>Welcome back!</h3>
+          <h3>{profile.displayName}</h3>
           <p>{user.email}</p>
+          <p className="profile-bio">{profile.bio}</p>
+          <button 
+            className="edit-profile-btn"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? 'Cancel' : 'Edit Profile'}
+          </button>
         </div>
       </div>
+
+      {isEditing && (
+        <div className="edit-profile-section">
+          <h3>Edit Profile</h3>
+          <div className="edit-form">
+            <div className="form-group">
+              <label>Display Name:</label>
+              <input
+                type="text"
+                value={editForm.displayName}
+                onChange={(e) => setEditForm({...editForm, displayName: e.target.value})}
+                className="profile-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Avatar:</label>
+              <div className="avatar-selection">
+                {avatarOptions.map(avatar => (
+                  <button
+                    key={avatar}
+                    className={`avatar-option ${editForm.avatar === avatar ? 'selected' : ''}`}
+                    onClick={() => setEditForm({...editForm, avatar})}
+                  >
+                    {avatar}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Bio:</label>
+              <textarea
+                value={editForm.bio}
+                onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                className="profile-textarea"
+                placeholder="Tell us about yourself..."
+                rows="3"
+              />
+            </div>
+            
+            <button className="save-profile-btn" onClick={saveProfile}>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
 
       {purchases.length > 0 && (
         <div className="purchases-section">
